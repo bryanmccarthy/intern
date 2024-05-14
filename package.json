@@ -20,6 +20,10 @@
       {
         "command": "intern.commentSelection",
         "title": "Comment Selection"
+      },
+      {
+        "command": "intern.answerSelection",
+        "title": "Answer Selection"
       }
     ],
     "keybindings": [
@@ -30,7 +34,12 @@
       },
       {
         "command": "intern.commentSelection",
-        "key": "cmd+o",
+        "key": "cmd+shift+c",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "intern.answerSelection",
+        "key": "cmd+a",
         "when": "editorTextFocus"
       }
     ]

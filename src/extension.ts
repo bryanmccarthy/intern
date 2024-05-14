@@ -57,11 +57,38 @@ export function activate(context: vscode.ExtensionContext) {
         editor.edit((editBuilder) => {
             editBuilder.replace(fullLineRange, String(result));
         });
-        
+    });
+
+    let disposable3 = vscode.commands.registerCommand('intern.answerSelection', async () => {
+        const editor = vscode.window.activeTextEditor;
+
+        if (!editor) {
+            vscode.window.showInformationMessage('No active text editor');
+            return;
+        }
+
+        const fullLineRange = await processSelectionRange(editor);
+        const selectedText = editor.document.getText(fullLineRange);
+
+        let result = await answerBlock(selectedText);
+        if (result instanceof Error) {
+            vscode.window.showErrorMessage('Error: ' + result);
+            return;
+        }
+
+        // Remove backticks and code blocks
+        result = formatResult(String(result));
+
+        editor.edit((editBuilder) => {
+            const insertPosition = new vscode.Position(fullLineRange.end.line + 1, 0);
+            editBuilder.replace(insertPosition, String(result));
+        });
     });
 
 	context.subscriptions.push(disposable1);
     context.subscriptions.push(disposable2);
+    context.subscriptions.push(disposable3);
+
 }
 
 const formatResult = (result: string) => {
@@ -102,6 +129,22 @@ const commentBlock = async (prompt: string) => {
             messages: [{ 
                 role: "system", 
                 content: `Please add comments to the provided code. Keep them short and concise. Do not refactor the code. Code: ${prompt}` 
+            }],
+            model: "gpt-4o",
+        });
+
+        return completion.choices[0].message.content;
+    } catch (error) {
+        return error;
+    }
+}
+
+const answerBlock = async (prompt: string) => {
+    try {
+        const completion = await openai.chat.completions.create({
+            messages: [{ 
+                role: "system", 
+                content: `Please only respond with code. Any explanations can be in code comments but avoid comments in most cases. Keep the code as short as possible. ${prompt}` 
             }],
             model: "gpt-4o",
         });
